@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MS Edge PDF — Process your PDFs, right from the desktop</title>
+<style>
+  :root{
+    --bg: #060B18;
+    --bg-2: #0A1428;
+    --panel: rgba(16,24,46,0.55);
+    --panel-solid: #0D1730;
+    --line: rgba(255,255,255,0.09);
+    --line-soft: rgba(255,255,255,0.06);
+    --ink: #EAEFFB;
+    --muted: #93A1C4;
+    --muted-2: #6C7897;
+    --blue-deep: #12245C;
+    --blue: #2F63E0;
+    --blue-light: #6FB3FF;
+    --grad: linear-gradient(120deg, #1B3FA0 0%, #2F63E0 45%, #6FB3FF 100%);
+    --grad-soft: linear-gradient(120deg, rgba(47,99,224,0.18) 0%, rgba(111,179,255,0.14) 100%);
+    --green: #5C8B57;
+    --green-dark: #3E5F3B;
+    --grad-green: linear-gradient(180deg, #6C9B66 0%, #3E5F3B 100%);
+    --font-display: 'Segoe UI Variable Display','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+    --font-body: 'Segoe UI Variable Text','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+    --font-mono: 'Cascadia Code','Consolas','SFMono-Regular',monospace;
+    --radius: 14px;
+    --shadow-lg: 0 30px 70px -24px rgba(0,0,0,0.6);
+    --shadow-sm: 0 10px 26px -14px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* global ambient blue glow, echoing the app's own background */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-2; background:var(--bg);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(900px 700px at 85% -5%, rgba(47,99,224,0.28), transparent 60%),
+      radial-gradient(700px 600px at -5% 20%, rgba(111,179,255,0.14), transparent 55%),
+      radial-gradient(1000px 800px at 50% 120%, rgba(27,63,160,0.24), transparent 60%);
+  }
+  img,svg{display:block; max-width:100%;}
+  a{color:inherit; text-decoration:none;}
+  ul{list-style:none;}
+  button{font-family:inherit; cursor:pointer;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
+  @media (max-width:640px){ .wrap{padding:0 20px;} }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(6,11,24,0.72);
+    backdrop-filter:blur(16px) saturate(160%);
+    -webkit-backdrop-filter:blur(16px) saturate(160%);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-row{
+    max-width:1180px; margin:0 auto; padding:0 32px;
+    height:68px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:700; font-size:17px; letter-spacing:-0.01em; color:#fff;}
+  .brand .mark{width:28px; height:28px;}
+  .nav-links{display:flex; align-items:center; gap:32px; font-size:14.5px; color:var(--muted); font-weight:600;}
+  .nav-links a:hover{color:#fff;}
+  .nav-cta{
+    background:var(--grad); color:#fff; padding:9px 18px; border-radius:8px;
+    font-size:14px; font-weight:700; transition:transform .15s ease, filter .15s ease;
+    box-shadow:var(--shadow-sm);
+  }
+  .nav-cta:hover{filter:brightness(1.12); transform:translateY(-1px);}
+  @media (max-width:760px){ .nav-links{display:none;} }
+
+  /* ---------- HERO ---------- */
+  .hero{ position:relative; padding:168px 0 110px; overflow:hidden; }
+  .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center; }
+  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr;} .hero{padding:140px 0 70px;} }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--blue-light); font-weight:600;
+    background:rgba(47,99,224,0.12); border:1px solid rgba(111,179,255,0.25);
+    padding:6px 12px; border-radius:999px; margin-bottom:22px;
+  }
+  .eyebrow .dot{width:6px; height:6px; border-radius:50%; background:var(--grad);}
+
+  h1.headline{
+    font-family:var(--font-display); font-weight:700; color:#fff;
+    font-size:clamp(36px, 5vw, 60px);
+    line-height:1.06; letter-spacing:-0.02em;
+    margin-bottom:22px;
+  }
+  h1.headline .g{
+    background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{ font-size:17.5px; line-height:1.65; color:var(--muted); max-width:520px; margin-bottom:36px; }
+
+  .download-row{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding:14px 22px; border-radius:10px; font-weight:700; font-size:15px;
+    border:1px solid transparent; transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .btn-primary{background:var(--grad); color:#fff; box-shadow:var(--shadow-sm);}
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:var(--shadow-lg); filter:brightness(1.08);}
+  .btn-ghost{background:rgba(255,255,255,0.05); color:#fff; border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--blue-light); background:rgba(255,255,255,0.08); transform:translateY(-2px);}
+  .btn svg{width:18px; height:18px; flex-shrink:0;}
+  .meta-line{font-size:13px; color:var(--muted-2); font-family:var(--font-mono);}
+  .meta-line b{color:var(--ink); font-weight:600;}
+  .win-badge{display:inline-flex; align-items:center; gap:6px;}
+  .win-badge svg{width:14px; height:14px;}
+
+  /* Hero art: recreation of the app's own window, glowing */
+  .hero-art{ position:relative; display:flex; align-items:center; justify-content:center; }
+  .app-window{
+    width:100%; max-width:440px; border-radius:14px; overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 50px 100px -30px rgba(0,0,0,0.75);
+    background:
+      radial-gradient(500px 380px at 90% -10%, rgba(111,179,255,0.35), transparent 60%),
+      radial-gradient(400px 340px at -10% 110%, rgba(47,99,224,0.30), transparent 55%),
+      linear-gradient(160deg, #0A1633 0%, #050B18 60%);
+    position:relative;
+  }
+  .app-titlebar{
+    display:flex; align-items:center; justify-content:flex-end; padding:10px 14px;
+    background:rgba(255,255,255,0.02); border-bottom:1px solid var(--line-soft);
+  }
+  .app-titlebar svg{width:13px; height:13px; opacity:0.6;}
+  .app-form{ padding:22px 24px 26px; position:relative; }
+  .form-row{ margin-bottom:16px; }
+  .form-row label{ display:block; font-size:13px; color:var(--muted); margin-bottom:7px; font-weight:600; }
+  .form-row .field{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,0.04); border:1px solid var(--line);
+    border-radius:6px; padding:9px 10px; min-height:34px;
+  }
+  .form-row .field .browse{
+    margin-left:auto; width:24px; height:22px; border-radius:4px;
+    background:rgba(255,255,255,0.06); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--muted); flex-shrink:0;
+  }
+  .process-btn{
+    width:100%; margin-top:6px; padding:11px; border-radius:6px; text-align:center;
+    background:var(--grad-green); border:1px solid rgba(255,255,255,0.14);
+    color:#fff; font-weight:700; font-size:14px; letter-spacing:0.01em;
+    box-shadow:0 10px 22px -10px rgba(0,0,0,0.5);
+  }
+  .glass-float{
+    position:absolute; border-radius:12px;
+    background:rgba(13,23,48,0.75);
+    border:1px solid var(--line);
+    backdrop-filter:blur(10px);
+    box-shadow:var(--shadow-sm);
+    padding:11px 13px; font-size:12px; font-weight:700; color:var(--ink);
+    display:flex; align-items:center; gap:8px;
+    animation:float 5s ease-in-out infinite;
+  }
+  .glass-float svg{width:15px; height:15px;}
+  .glass-1{top:-6%; left:-8%; animation-delay:0s;}
+  .glass-2{bottom:-6%; right:-8%; animation-delay:1.4s;}
+  @keyframes float{ 0%,100%{transform:translateY(0px);} 50%{transform:translateY(-10px);} }
+  @media (max-width:900px){ .glass-float{display:none;} }
+
+  /* ---------- STATS STRIP ---------- */
+  .stats{border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); background:rgba(255,255,255,0.015);}
+  .stats-row{ max-width:1180px; margin:0 auto; padding:26px 32px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; }
+  .stat{flex:1; min-width:140px; text-align:left;}
+  .stat b{display:block; font-family:var(--font-display); font-size:25px; font-weight:700; color:#fff;}
+  .stat span{font-size:13px; color:var(--muted-2);}
+
+  /* ---------- SECTION HEADERS ---------- */
+  section{padding:100px 0;}
+  @media (max-width:640px){ section{padding:64px 0;} }
+  .sec-head{max-width:600px; margin-bottom:56px;}
+  .sec-eyebrow{font-family:var(--font-mono); font-size:12.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--blue-light); font-weight:700; margin-bottom:12px;}
+  .sec-title{font-family:var(--font-display); font-size:clamp(26px,3.2vw,36px); font-weight:700; letter-spacing:-0.015em; margin-bottom:14px; color:#fff;}
+  .sec-desc{color:var(--muted); font-size:16.5px; line-height:1.6;}
+
+  /* ---------- FEATURES ---------- */
+  .feat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  @media (max-width:900px){ .feat-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:600px){ .feat-grid{grid-template-columns:1fr;} }
+  .feat-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 24px; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    backdrop-filter:blur(10px);
+  }
+  .feat-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-sm); border-color:rgba(111,179,255,0.35); }
+  .feat-icon{
+    width:42px; height:42px; border-radius:11px; margin-bottom:16px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--grad-soft);
+  }
+  .feat-icon svg{width:22px; height:22px; stroke:var(--blue-light);}
+  .feat-card h3{font-family:var(--font-display); font-size:17px; font-weight:700; margin-bottom:8px; color:#fff;}
+  .feat-card p{font-size:14.5px; color:var(--muted); line-height:1.55;}
+
+  /* ---------- SHOWCASE ---------- */
+  .app-body{display:grid; grid-template-columns:210px 1fr; min-height:340px;}
+
+  /* ---------- WHY SWITCH ---------- */
+  .switch{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:760px){ .switch{grid-template-columns:1fr;} }
+  .switch-card{border-radius:var(--radius); padding:28px; border:1px solid var(--line); background:var(--panel); backdrop-filter:blur(10px);}
+  .switch-card.yes{border-color:rgba(111,179,255,0.35); box-shadow:var(--shadow-sm);}
+  .switch-card h4{font-family:var(--font-display); font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px; color:#fff;}
+  .switch-card ul li{display:flex; gap:10px; font-size:14.5px; color:var(--muted); padding:7px 0; line-height:1.4;}
+  .switch-card.yes ul li{color:var(--ink);}
+  .switch-card li svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+  .no li svg{stroke:#E0716B;} .yes li svg{stroke:var(--blue-light);}
+
+  /* ---------- SYSTEM REQS ---------- */
+  .req-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:30px; max-width:460px; backdrop-filter:blur(10px);}
+  .req-card .plat{display:flex; align-items:center; gap:10px; margin-bottom:18px; font-family:var(--font-display); font-weight:700; font-size:17px; color:#fff;}
+  .req-card .plat svg{width:22px; height:22px;}
+  .req-card table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .req-card td{padding:9px 0; border-top:1px solid var(--line-soft); color:var(--muted);}
+  .req-card td:first-child{color:var(--ink); font-weight:600; width:40%;}
+
+  /* ---------- FINAL CTA ---------- */
+  .cta-final{
+    border-radius:24px; margin:0 auto; padding:64px 40px; text-align:center;
+    background:
+      radial-gradient(700px 400px at 85% -20%, rgba(111,179,255,0.35), transparent 60%),
+      radial-gradient(600px 400px at 10% 120%, rgba(47,99,224,0.35), transparent 55%),
+      linear-gradient(160deg, #0F1C3D 0%, #060B18 100%);
+    border:1px solid var(--line);
+    color:#fff; position:relative; overflow:hidden;
+  }
+  .cta-final h2{font-family:var(--font-display); font-size:clamp(26px,3.6vw,38px); font-weight:700; margin-bottom:14px;}
+  .cta-final p{opacity:0.85; margin-bottom:30px; font-size:16px; color:var(--muted);}
+  .cta-final .download-row{justify-content:center;}
+  .cta-final .meta-line{color:var(--muted-2);}
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:56px 0 30px; margin-top:100px; border-top:1px solid var(--line-soft);}
+  .foot-row{display:flex; justify-content:space-between; flex-wrap:wrap; gap:36px; margin-bottom:36px;}
+  .foot-brand{max-width:260px;}
+  .foot-brand .brand{margin-bottom:12px;}
+  .foot-brand p{font-size:13.5px; line-height:1.6; color:var(--muted-2);}
+  .foot-col h5{color:#fff; font-size:13px; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:14px;}
+  .foot-col li{font-size:14px; margin-bottom:10px; color:var(--muted);}
+  .foot-col a:hover{color:#fff;}
+  .foot-cols{display:flex; gap:56px; flex-wrap:wrap;}
+  .foot-bottom{border-top:1px solid var(--line-soft); padding-top:22px; font-size:12.5px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; color:var(--muted-2);}
+
+  .reveal{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-row">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="navgrad" x1="0" y1="0" x2="32" y2="32"><stop offset="0" stop-color="#1B3FA0"/><stop offset="0.55" stop-color="#2F63E0"/><stop offset="1" stop-color="#6FB3FF"/></linearGradient></defs>
+        <path d="M6 4h14l6 6v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="url(#navgrad)"/>
+        <path d="M14 17c2.2 3.4 6.4 5 10.5 3.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.85"/>
+      </svg>
+      MS Edge PDF
+    </div>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#app">Preview</a>
+      <a href="#requirements">Requirements</a>
+    </nav>
+    <a href="#download" class="nav-cta">Download</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Windows desktop app</div>
+      <h1 class="headline">Fill it in.<br><span class="g">Process the PDF.</span></h1>
+      <p class="sub">MS Edge PDF is a small, focused Windows app for filling in document details and turning them into a finished PDF in one click — no bloated toolbar, no browser tab required.</p>
+
+      <div class="download-row" id="download">
+        <a class="btn btn-primary" id="primaryDownload" href="downloads/Msedge_Setup.exe" download="Msedge_Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span>Download for Windows</span>
+        </a>
+        <a class="btn btn-ghost" href="#requirements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>System requirements</span>
+        </a>
+      </div>
+      <div class="meta-line win-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zm0 13-.1-6.9h7.6v7.8zM11.5 4.3 21 3v8.4h-9.5zm0 8.3H21V21l-9.5-1.3z"/></svg>
+        Windows only · <b>v1.0</b> · No account required
+      </div>
+    </div>
+
+    <div class="hero-art">
+      <div class="app-window">
+        <div class="app-titlebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+        </div>
+        <div class="app-form">
+          <div class="form-row">
+            <label>PDF File:</label>
+            <div class="field"><span class="browse">…</span></div>
+          </div>
+          <div class="form-row">
+            <label>Name:</label>
+            <div class="field"></div>
+          </div>
+          <div class="form-row">
+            <label>Price:</label>
+            <div class="field"></div>
+          </div>
+          <div class="form-row">
+            <label>N° Immat:</label>
+            <div class="field"></div>
+          </div>
+          <div class="process-btn">Process PDF</div>
+        </div>
+      </div>
+      <div class="glass-float glass-1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6FB3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Document generated
+      </div>
+      <div class="glass-float glass-2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6FB3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+        Under a second
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="stats-row">
+    <div class="stat"><b>Windows</b><span>10 &amp; 11 supported</span></div>
+    <div class="stat"><b>&lt;1s</b><span>To process a document</span></div>
+    <div class="stat"><b>1 click</b><span>From fields to finished PDF</span></div>
+    <div class="stat"><b>Local</b><span>Files never leave your PC</span></div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-eyebrow">Features</div>
+      <h2 class="sec-title">Everything the form needs, nothing it doesn't.</h2>
+      <p class="sec-desc">Pick a PDF, fill in the details, and let MS Edge PDF generate the finished document — built for people who fill out the same kind of paperwork every day.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg></div>
+        <h3>Load any PDF</h3>
+        <p>Point the app at a source file with the "…" browse button — no drag-and-drop gymnastics required.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+        <h3>Fill in the details</h3>
+        <p>Name, price, registration number — type straight into plain fields, no PDF form editor to fight with.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
+        <h3>Process in one click</h3>
+        <p>Hit "Process PDF" and the finished document is generated instantly — ready to save or hand off.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>Stays on your PC</h3>
+        <p>Everything is processed locally on your machine — no upload, no cloud round-trip for your files.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div>
+        <h3>Lightweight window</h3>
+        <p>One compact window with just the fields you need — nothing to configure, nothing to learn.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h3>Built for Windows</h3>
+        <p>Native look and feel on Windows 10 and 11, so it fits right in with the rest of your desktop.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="app">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-eyebrow">Preview</div>
+      <h2 class="sec-title">One small window. That's the whole app.</h2>
+      <p class="sec-desc">No ribbons, no sidebars to get lost in — just the fields you're filling out today.</p>
+    </div>
+  </div>
+</section>
+
+<section id="switch-section">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-eyebrow">Why it's different</div>
+      <h2 class="sec-title">Built for one job, done well.</h2>
+    </div>
+    <div class="switch">
+      <div class="switch-card no reveal">
+        <h4>A typical PDF suite</h4>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>Dozens of tools you'll never open</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>Slow launch, heavy install</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>Upgrade prompts mid-task</li>
+        </ul>
+      </div>
+      <div class="switch-card yes reveal">
+        <h4>MS Edge PDF</h4>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>One window, four fields, one button</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Opens instantly, tiny footprint</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Nothing to configure or maintain</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="requirements">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-eyebrow">System requirements</div>
+      <h2 class="sec-title">Windows only, for now.</h2>
+    </div>
+    <div class="req-card reveal">
+      <div class="plat">
+        <svg viewBox="0 0 24 24" fill="#6FB3FF"><path d="M3 5.5 10.5 4.4v7.1H3zm0 13-.1-6.9h7.6v7.8zM11.5 4.3 21 3v8.4h-9.5zm0 8.3H21V21l-9.5-1.3z"/></svg>
+        Windows
+      </div>
+      <table>
+        <tr><td>OS</td><td>Windows 10 (64-bit) or later</td></tr>
+        <tr><td>Processor</td><td>1.6 GHz dual-core or better</td></tr>
+        <tr><td>Memory</td><td>2 GB RAM minimum</td></tr>
+        <tr><td>Storage</td><td>60 MB free space</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-final reveal">
+      <h2>Get MS Edge PDF for Windows</h2>
+      <p>Free to install. No account required.</p>
+      <div class="download-row">
+        <a class="btn btn-primary" href="downloads/Msedge_Setup.exe" download="Msedge_Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download for Windows
+        </a>
+      </div>
+      <div class="meta-line">v1.0 · Windows 10 &amp; 11</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <div class="foot-brand">
+        <div class="brand">
+          <svg class="mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 4h14l6 6v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="url(#navgrad)"/>
+          </svg>
+          MS Edge PDF
+        </div>
+        <p>A small, focused PDF processing tool for Windows.</p>
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <h5>Product</h5>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#app">Preview</a></li>
+            <li><a href="#requirements">Requirements</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <h5>Download</h5>
+          <ul>
+            <li><a href="#download">Windows</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Privacy</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 MS Edge PDF.</span>
+      <span>Made for Windows</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); observer.unobserve(e.target); }
+    });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(function(el){ observer.observe(el); });
+</script>
+
+</body>
+</html>
